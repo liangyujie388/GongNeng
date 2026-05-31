@@ -276,6 +276,59 @@ body{
   font-size: 13px;
   color: rgba(255,255,255,.88);
 }
+.roleplay{
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.22);
+}
+.roleplay__title{
+  font-size: 13px;
+  font-weight: 900;
+  margin-bottom: 10px;
+}
+.roleplay__messages{
+  max-height: 260px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 2px;
+}
+.roleplay__placeholder{
+  color: var(--muted);
+  font-size: 12px;
+}
+.roleplay__line{
+  font-size: 13px;
+  line-height: 1.7;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.10);
+}
+.roleplay__line--ai{
+  background: rgba(255,107,107,.10);
+  border-color: rgba(255,107,107,.20);
+}
+.roleplay__line--user{
+  background: rgba(110,231,255,.10);
+  border-color: rgba(110,231,255,.20);
+}
+.roleplay__line--police{
+  background: rgba(124,242,154,.10);
+  border-color: rgba(124,242,154,.20);
+}
+.roleplay__input{
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+}
+@media (max-width: 980px){
+  .roleplay__input{ grid-template-columns: 1fr; }
+}
 
 .grid{
   padding: 14px;

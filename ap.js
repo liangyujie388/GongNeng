@@ -89,6 +89,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // ===== 场景模拟 =====
   const storyTitle = $("storyTitle");
   const storyBody = $("storyBody");
+  const roleplayMessages = $("roleplayMessages");
+  const roleplayInput = $("roleplayInput");
+  const roleplaySendBtn = $("roleplaySendBtn");
+  const roleplayRestartBtn = $("roleplayRestartBtn");
 
   const stories = {
     刷单返利: `【剧情】你在群里看到“轻松兼职日赚300”，对方先让你做小任务返你20元，随后要求你垫付更大金额才能“解冻返利”。
@@ -102,16 +106,156 @@ document.addEventListener("DOMContentLoaded", () => {
 目标：识别“安全账户/恐吓威胁/要求保密/屏幕共享”等风险点。`,
   };
 
+  const scenarioScripts = {
+    刷单返利: {
+      opening: "你好呀，我们平台今天冲业绩，新人做一单返30，5分钟到账。先做个小任务试试？",
+      cautious: "别担心，这个很多人都在做。你先垫付 98 元，系统返你 128 元，马上截图给你看。",
+      greedy: "你很有眼光！现在有高佣金任务，垫付 1888 元可返 2580 元，名额马上没了。",
+      verify: "别找别人问，这是内部任务，必须保密操作。现在就转，不然账号会被冻结。",
+      finalPush: "系统显示你操作超时，需要补交“解冻金” 3000 元才能提现，错过就全部清零。",
+    },
+    游戏交易: {
+      opening: "兄弟，稀有皮肤低价出了，只要市场价 3 折，走我发你的担保链接最省手续费。",
+      cautious: "你放心，担保链接是官方合作通道。你先下单付款，我秒发账号验证码。",
+      greedy: "你来得正好，现在加价的人很多。先付定金 200 元我给你锁单，不然就给别人了。",
+      verify: "平台聊天慢，别在平台说，直接点这个外链付款就行，10 分钟内有效。",
+      finalPush: "系统提示资金风控，你再补一次“认证款”就能放行，不补就会永久冻结交易。",
+    },
+    冒充公检法: {
+      opening: "这里是市公安反诈中心，你的身份信息涉嫌洗钱案件，请立即配合调查。",
+      cautious: "案件已立案，你必须保持通话并下载会议软件。任何人都不能告知，包括家人。",
+      greedy: "你现在配合得不错，只要把资金转入“安全账户”核验，24 小时后原路返还。",
+      verify: "不要质疑执法流程！不立刻配合会影响征信并采取强制措施，你承担后果。",
+      finalPush: "最后一步，马上共享屏幕并输入银行卡验证码完成资金审查。",
+    },
+  };
+
+  const roleplayState = {
+    scenario: "",
+    turns: 0,
+    ended: false,
+    transcript: [],
+  };
+
+  function resetRoleplayMessages() {
+    if (!roleplayMessages) return;
+    roleplayMessages.innerHTML = "";
+  }
+
+  function appendRoleplayLine(role, text) {
+    if (!roleplayMessages) return;
+    const roleMap = {
+      ai: { label: "AI骗子", cls: "roleplay__line--ai" },
+      user: { label: "你", cls: "roleplay__line--user" },
+      police: { label: "警方", cls: "roleplay__line--police" },
+    };
+    const conf = roleMap[role] || roleMap.ai;
+    const div = document.createElement("div");
+    div.className = `roleplay__line ${conf.cls}`;
+    div.innerHTML = `<strong>${conf.label}：</strong>${escapeHtml(text)}`;
+    roleplayMessages.appendChild(div);
+    roleplayMessages.scrollTop = roleplayMessages.scrollHeight;
+    roleplayState.transcript.push(`${conf.label}：${text}`);
+  }
+
+  function detectReplyType(text) {
+    const value = String(text || "").trim();
+    if (!value) return "neutral";
+    if (/(报警|110|警察|家人|老师|辅导员|官方|核实|核验|不信|真的吗|证件|工号)/.test(value)) return "verify";
+    if (/(不转|不付|拒绝|拉黑|退出|不买|不做|算了|放弃)/.test(value)) return "cautious";
+    if (/(马上|现在|可以|好的|同意|我转|我付|我买|我配合|按你说)/.test(value)) return "greedy";
+    return "neutral";
+  }
+
+  function buildScamReply(scenario, replyType, turns) {
+    const script = scenarioScripts[scenario];
+    if (!script) return "继续按我说的做，千万别告诉别人。";
+    if (turns === 1) {
+      if (replyType === "verify" || replyType === "cautious") return script.cautious;
+      return script.greedy;
+    }
+    if (turns === 2) {
+      if (replyType === "verify") return script.verify;
+      return script.finalPush;
+    }
+    return script.finalPush;
+  }
+
+  function finishRoleplayWithPolice() {
+    if (roleplayState.ended) return;
+    roleplayState.ended = true;
+    appendRoleplayLine(
+      "police",
+      "这里是警方反诈专线，刚刚对方是诈骗分子。请立即停止操作、保存聊天与转账证据，并通过官方渠道举报。该诈骗账号已被锁定。"
+    );
+  }
+
+  function startRoleplay(scenario) {
+    const script = scenarioScripts[scenario];
+    roleplayState.scenario = scenario;
+    roleplayState.turns = 0;
+    roleplayState.ended = false;
+    roleplayState.transcript = [];
+    resetRoleplayMessages();
+    if (script) appendRoleplayLine("ai", script.opening);
+    roleplayInput && (roleplayInput.value = "");
+    roleplayInput?.focus();
+  }
+
+  function sendRoleplayReply() {
+    const userText = (roleplayInput?.value || "").trim();
+    if (!roleplayState.scenario) {
+      alert("请先选择一个场景并点击“进入剧情”。");
+      return;
+    }
+    if (!userText) return;
+    if (roleplayState.ended) {
+      alert("本轮剧情已结束，请点击“重新开始”。");
+      return;
+    }
+
+    appendRoleplayLine("user", userText);
+    roleplayInput.value = "";
+
+    roleplayState.turns += 1;
+    const replyType = detectReplyType(userText);
+    const scamReply = buildScamReply(roleplayState.scenario, replyType, roleplayState.turns);
+    appendRoleplayLine("ai", scamReply);
+
+    if (roleplayState.turns >= 3 || replyType === "verify" || replyType === "cautious") {
+      finishRoleplayWithPolice();
+    }
+  }
+
   document.querySelectorAll(".scenario").forEach((card) => {
     card.addEventListener("click", () => {
       const s = card.dataset.scenario;
       if (storyTitle) storyTitle.textContent = `当前场景：${s}`;
       if (storyBody) storyBody.textContent = stories[s] || "暂无剧情";
+      startRoleplay(s);
     });
   });
 
+  roleplaySendBtn?.addEventListener("click", sendRoleplayReply);
+  roleplayInput?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      sendRoleplayReply();
+    }
+  });
+  roleplayRestartBtn?.addEventListener("click", () => {
+    if (!roleplayState.scenario) {
+      alert("请先选择一个场景。");
+      return;
+    }
+    startRoleplay(roleplayState.scenario);
+  });
+
   on("copyStoryBtn", "click", async () => {
-    await copyText(storyBody?.textContent || "");
+    const transcriptText = roleplayState.transcript.length
+      ? `\n\n【互动对话】\n${roleplayState.transcript.join("\n")}`
+      : "";
+    await copyText((storyBody?.textContent || "") + transcriptText);
     openAi();
   });
 
