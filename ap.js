@@ -91,8 +91,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const storyBody = $("storyBody");
   const roleplayMessages = $("roleplayMessages");
   const roleplayInput = $("roleplayInput");
+  const roleplayVoiceBtn = $("roleplayVoiceBtn");
+  const roleplayVoiceTip = $("roleplayVoiceTip");
   const roleplaySendBtn = $("roleplaySendBtn");
   const roleplayRestartBtn = $("roleplayRestartBtn");
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let speechRecognizer = null;
+  let isVoiceListening = false;
 
   const stories = {
     刷单返利: `【剧情】你在群里看到“轻松兼职日赚300”，对方先让你做小任务返你20元，随后要求你垫付更大金额才能“解冻返利”。
@@ -203,6 +208,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function sendRoleplayReply() {
+    if (isVoiceListening && speechRecognizer) speechRecognizer.stop();
     const userText = (roleplayInput?.value || "").trim();
     if (!roleplayState.scenario) {
       alert("请先选择一个场景并点击“进入剧情”。");
@@ -225,6 +231,80 @@ document.addEventListener("DOMContentLoaded", () => {
     if (roleplayState.turns >= 3 || replyType === "verify" || replyType === "cautious") {
       finishRoleplayWithPolice();
     }
+  }
+
+  function setVoiceTip(text) {
+    if (roleplayVoiceTip) roleplayVoiceTip.textContent = text;
+  }
+
+  function setVoiceListeningState(listening) {
+    isVoiceListening = listening;
+    if (!roleplayVoiceBtn) return;
+    roleplayVoiceBtn.classList.toggle("is-listening", listening);
+    roleplayVoiceBtn.textContent = listening ? "⏹ 结束语音" : "🎤 语音输入";
+  }
+
+  function initRoleplayVoiceInput() {
+    if (!roleplayVoiceBtn) return;
+
+    if (!SpeechRecognition) {
+      roleplayVoiceBtn.disabled = true;
+      setVoiceTip("当前浏览器不支持语音输入，请改用手动输入。");
+      return;
+    }
+
+    speechRecognizer = new SpeechRecognition();
+    speechRecognizer.lang = "zh-CN";
+    speechRecognizer.interimResults = true;
+    speechRecognizer.continuous = false;
+    speechRecognizer.maxAlternatives = 1;
+
+    let finalText = "";
+
+    speechRecognizer.onstart = () => {
+      finalText = "";
+      setVoiceListeningState(true);
+      setVoiceTip("正在收听，请开始说话…");
+    };
+
+    speechRecognizer.onresult = (event) => {
+      let interimText = "";
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const result = event.results[i];
+        const transcript = result[0]?.transcript || "";
+        if (result.isFinal) finalText += transcript;
+        else interimText += transcript;
+      }
+
+      const combined = (finalText + interimText).trim();
+      if (combined && roleplayInput) {
+        roleplayInput.value = combined;
+      }
+    };
+
+    speechRecognizer.onerror = () => {
+      setVoiceTip("语音识别失败，请检查麦克风权限后重试。");
+    };
+
+    speechRecognizer.onend = () => {
+      setVoiceListeningState(false);
+      const recognized = (roleplayInput?.value || "").trim();
+      if (recognized) setVoiceTip("语音已转文字，可继续编辑后发送。");
+      else setVoiceTip("未识别到语音内容，请重试。");
+    };
+
+    roleplayVoiceBtn.addEventListener("click", () => {
+      if (!speechRecognizer) return;
+      if (isVoiceListening) {
+        speechRecognizer.stop();
+        return;
+      }
+      try {
+        speechRecognizer.start();
+      } catch {
+        setVoiceTip("语音输入暂不可用，请稍后重试。");
+      }
+    });
   }
 
   document.querySelectorAll(".scenario").forEach((card) => {
@@ -250,6 +330,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     startRoleplay(roleplayState.scenario);
   });
+  initRoleplayVoiceInput();
 
   on("copyStoryBtn", "click", async () => {
     const transcriptText = roleplayState.transcript.length

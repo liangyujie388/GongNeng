@@ -322,9 +322,22 @@ body{
 .roleplay__input{
   margin-top: 10px;
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: minmax(0,1fr) auto auto auto;
   gap: 8px;
   align-items: center;
+}
+.roleplay__voice-btn{
+  white-space: nowrap;
+}
+.roleplay__voice-btn.is-listening{
+  border-color: rgba(255,107,107,.35);
+  background: rgba(255,107,107,.16);
+  color: rgba(255,255,255,.96);
+}
+.roleplay__voice-tip{
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
 }
 @media (max-width: 980px){
   .roleplay__input{ grid-template-columns: 1fr; }
@@ -796,4 +809,64 @@ body{
   border: 1px solid rgba(255,255,255,.14);
   background: rgba(255,255,255,.06);
   font-size: 12px; color: rgba(255,255,255,.80);
+}
+
+@media (max-width: 768px){
+  .topnav__inner{
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .topnav__right{
+    display: none;
+  }
+  .menu{
+    width: 100%;
+    order: 3;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding-bottom: 2px;
+  }
+  .menu__item{
+    flex-shrink: 0;
+    border-radius: 999px;
+    padding: 8px 12px;
+  }
+  .hero__inner{
+    padding: 30px 14px 24px;
+    gap: 16px;
+  }
+  .hero__title{
+    font-size: 26px;
+  }
+  .workbench__inner{
+    padding: 16px 12px 32px;
+  }
+  .story{
+    margin: 0 0 12px;
+  }
+  .story__head{
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .story__head .btn{
+    width: 100%;
+  }
+  .roleplay{
+    padding: 10px;
+  }
+  .roleplay__messages{
+    max-height: 210px;
+  }
+  .roleplay__input{
+    grid-template-columns: 1fr;
+  }
+  .roleplay__input .btn{
+    width: 100%;
+  }
+  .ai-drawer{
+    width: 100vw;
+    border-left: none;
+  }
 }
