@@ -1,0 +1,93 @@
+body.is-mobile .topnav__inner {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+body.is-mobile .topnav__right {
+  display: flex;
+  justify-content: flex-end;
+}
+
+body.is-mobile .menu {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+body.is-mobile .menu__item {
+  width: 100%;
+  text-align: center;
+}
+
+body.is-mobile .hero__inner {
+  grid-template-columns: 1fr;
+  padding: 28px 14px 24px;
+  gap: 16px;
+}
+
+body.is-mobile .hero__right {
+  display: none;
+}
+
+body.is-mobile .hero__title {
+  font-size: 24px;
+}
+
+body.is-mobile .hero__actions {
+  flex-direction: column;
+}
+
+body.is-mobile .hero__actions .btn {
+  width: 100%;
+}
+
+body.is-mobile .hero__tips {
+  grid-template-columns: 1fr;
+}
+
+body.is-mobile .workbench__inner {
+  padding: 16px 12px 48px;
+}
+
+body.is-mobile .cards {
+  grid-template-columns: 1fr;
+}
+
+body.is-mobile .story__head {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+body.is-mobile .roleplay__input {
+  grid-template-columns: 1fr;
+}
+
+body.is-mobile .roleplay__input .btn {
+  width: 100%;
+}
+
+body.is-mobile .ai-fab {
+  right: 16px;
+  bottom: 16px;
+}
+
+body.is-mobile .ai-drawer {
+  width: 100vw;
+  border-left: none;
+}
+
+body.is-mobile .chat-input-bar {
+  gap: 6px;
+}
+
+body.is-mobile .chat-textarea {
+  font-size: 14px;
+}
+
+body.is-mobile .chat-voice-tip {
+  margin: 6px 0 0;
+  font-size: 12px;
+}

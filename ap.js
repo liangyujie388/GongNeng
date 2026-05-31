@@ -615,8 +615,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const chatAttachBtn = $("chatAttachBtn");
   const chatAttachmentsPreview = $("chatAttachmentsPreview");
   const mediaFileInput = $("mediaFileInput");
+  const chatVoiceBtn = $("chatVoiceBtn");
+  const chatVoiceTip = $("chatVoiceTip");
 
   let pendingFiles = [];
+  let chatSpeechRecognizer = null;
+  let isChatVoiceListening = false;
 
   appendAiMsg(
     "欢迎使用 <strong>AI 反诈助手</strong>！👋<br>" +
@@ -632,9 +636,14 @@ document.addEventListener("DOMContentLoaded", () => {
     mediaFileInput.value = "";
   });
 
-  chatInput?.addEventListener("input", () => {
+  function resizeChatInput() {
+    if (!chatInput) return;
     chatInput.style.height = "auto";
     chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + "px";
+  }
+
+  chatInput?.addEventListener("input", () => {
+    resizeChatInput();
   });
 
   chatInput?.addEventListener("keydown", (e) => {
@@ -645,6 +654,87 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   chatSendBtn?.addEventListener("click", sendChatMessage);
+
+  function setChatVoiceTip(text) {
+    if (chatVoiceTip) chatVoiceTip.textContent = text;
+  }
+
+  function setChatVoiceListeningState(listening) {
+    isChatVoiceListening = listening;
+    if (!chatVoiceBtn) return;
+    chatVoiceBtn.classList.toggle("is-listening", listening);
+    chatVoiceBtn.textContent = listening ? "⏹" : "🎤";
+  }
+
+  function initChatVoiceInput() {
+    if (!chatVoiceBtn || !chatInput) return;
+
+    if (!SpeechRecognition) {
+      chatVoiceBtn.disabled = true;
+      setChatVoiceTip("当前浏览器不支持语音输入，请改用手动输入。");
+      return;
+    }
+
+    chatSpeechRecognizer = new SpeechRecognition();
+    chatSpeechRecognizer.lang = "zh-CN";
+    chatSpeechRecognizer.interimResults = true;
+    chatSpeechRecognizer.continuous = false;
+    chatSpeechRecognizer.maxAlternatives = 1;
+
+    let finalText = "";
+    let baseText = "";
+
+    chatSpeechRecognizer.onstart = () => {
+      finalText = "";
+      baseText = (chatInput?.value || "").trim();
+      setChatVoiceListeningState(true);
+      setChatVoiceTip("正在收听，请开始说话…");
+    };
+
+    chatSpeechRecognizer.onresult = (event) => {
+      let interimText = "";
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const result = event.results[i];
+        const transcript = result[0]?.transcript || "";
+        if (result.isFinal) finalText += transcript;
+        else interimText += transcript;
+      }
+
+      const combined = (finalText + interimText).trim();
+      const value = [baseText, combined].filter(Boolean).join(baseText && combined ? " " : "");
+      if (chatInput) {
+        chatInput.value = value;
+        resizeChatInput();
+      }
+    };
+
+    chatSpeechRecognizer.onerror = () => {
+      setChatVoiceTip("语音识别失败，请检查麦克风权限后重试。");
+    };
+
+    chatSpeechRecognizer.onend = () => {
+      setChatVoiceListeningState(false);
+      const recognized = (chatInput?.value || "").trim();
+      if (recognized) setChatVoiceTip("语音已转文字，可继续编辑后发送。");
+      else setChatVoiceTip("未识别到语音内容，请重试。");
+    };
+
+    chatVoiceBtn.addEventListener("click", () => {
+      if (!chatSpeechRecognizer) return;
+      if (isChatVoiceListening) {
+        chatSpeechRecognizer.stop();
+        return;
+      }
+      if (isVoiceListening && speechRecognizer) speechRecognizer.stop();
+      try {
+        chatSpeechRecognizer.start();
+      } catch {
+        setChatVoiceTip("语音输入暂不可用，请稍后重试。");
+      }
+    });
+  }
+
+  initChatVoiceInput();
 
   // ===== Render Helpers =====
   function renderPendingChips() {
@@ -990,6 +1080,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function sendChatMessage() {
+    if (isChatVoiceListening && chatSpeechRecognizer) chatSpeechRecognizer.stop();
     const text = (chatInput?.value || "").trim();
     const files = [...pendingFiles];
     if (!text && !files.length) return;
