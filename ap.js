@@ -186,13 +186,46 @@ document.addEventListener("DOMContentLoaded", () => {
     return script.finalPush;
   }
 
+  function buildPoliceReview() {
+    const userInputs = roleplayState.transcript
+      .filter((line) => line.startsWith("你："))
+      .map((line) => line.replace(/^你：/, ""));
+
+    const behaviorTips = [];
+    const combined = userInputs.join(" ");
+
+    if (/(转账|付款|打钱|付|充值|垫付|汇款)/.test(combined)) {
+      behaviorTips.push("不要向陌生账户转账、垫付或补交所谓“解冻金/认证款”");
+    }
+    if (/(验证码|密码|卡号|身份证|人脸|短信码)/.test(combined)) {
+      behaviorTips.push("不要泄露验证码、密码、银行卡或身份证等敏感信息");
+    }
+    if (/(屏幕共享|远程|会议软件|下载软件|安装)/.test(combined)) {
+      behaviorTips.push("不要开启屏幕共享、远程控制，也不要安装陌生人指定的软件");
+    }
+    if (/(链接|网址|外链|二维码|跳转)/.test(combined)) {
+      behaviorTips.push("不要点击非官方链接或在站外页面进行交易/登录");
+    }
+    if (/(保密|别告诉|不能说|瞒着)/.test(combined)) {
+      behaviorTips.push("诈骗常用“保密”施压，遇到此类要求要立刻中止并向家人或警方求助");
+    }
+
+    if (!behaviorTips.length) {
+      behaviorTips.push("遇到催促转账、索要验证码、要求私下交易时，一律先停下来核实");
+    }
+
+    return [
+      `不建议的行为：${behaviorTips.join("；")}。`,
+      "可能后果：资金被骗后追回难度较高，个人信息可能被继续冒用，严重时还可能卷入洗钱等违法活动。",
+      "相关法规：可参考《中华人民共和国反电信网络诈骗法》《中华人民共和国治安管理处罚法》《中华人民共和国刑法》相关规定。",
+      "温馨建议：你做得很好，保持“先核实、再操作”，有疑问随时拨打 96110 或 110。",
+    ].join(" ");
+  }
+
   function finishRoleplayWithPolice() {
     if (roleplayState.ended) return;
     roleplayState.ended = true;
-    appendRoleplayLine(
-      "police",
-      "这里是警方反诈专线，刚刚对方是诈骗分子。请立即停止操作、保存聊天与转账证据，并通过官方渠道举报。该诈骗账号已被锁定。"
-    );
+    appendRoleplayLine("police", `这里是警方反诈提醒：刚刚对方是诈骗分子。${buildPoliceReview()}`);
   }
 
   function startRoleplay(scenario) {
