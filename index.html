@@ -79,7 +79,7 @@
         <section class="panel is-show" id="tab-scene">
           <div class="panel__head">
             <h2>场景模拟</h2>
-            <p>选择一个典型骗局场景，复制剧情给 AI 进行识别与应对指导。</p>
+            <p>选择一个典型骗局场景，进入互动角色扮演：AI 扮演骗子并根据你的回复动态推进剧情。</p>
           </div>
 
           <div class="cards">
@@ -109,6 +109,19 @@
               <button class="btn btn--primary" id="copyStoryBtn" type="button">复制剧情给 AI</button>
             </div>
             <pre class="story__body" id="storyBody">点击上面的“进入剧情”，这里会出现剧情文本。</pre>
+            <div class="roleplay" id="roleplayPanel">
+              <div class="roleplay__title">剧情对话（你 vs AI骗子）</div>
+              <div class="roleplay__messages" id="roleplayMessages">
+                <div class="roleplay__placeholder">选择场景后，AI 骗子会先开场。</div>
+              </div>
+              <div class="roleplay__input">
+                <input id="roleplayInput" class="input" placeholder="输入你的回复，例如：我先问问家人 / 我马上转账..." />
+                <button class="btn btn--ghost roleplay__voice-btn" id="roleplayVoiceBtn" type="button">🎤 语音输入</button>
+                <button class="btn btn--primary" id="roleplaySendBtn" type="button">发送回复</button>
+                <button class="btn btn--ghost" id="roleplayRestartBtn" type="button">重新开始</button>
+              </div>
+              <div class="roleplay__voice-tip" id="roleplayVoiceTip">手机端可点击“语音输入”进行语音转文字。</div>
+            </div>
           </div>
         </section>
 
